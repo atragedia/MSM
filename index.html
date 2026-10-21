@@ -36,6 +36,7 @@
     </script>
 
     <style>
+        /* O CSS PERMANECE O MESMO */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #8ab4f8; background-image: url('https://images.unsplash.com/photo-1554034483-04fda0d3507b?q=80&w=2000&auto=format&fit=crop'); background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
         .logo-magica { mix-blend-mode: multiply; }
         .msn-window { width: 850px; height: 600px; background: #e3efff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #99bce8; position: relative; }
@@ -86,7 +87,6 @@
         .input-row { display: flex; gap: 10px; }
         .chat-input { flex: 1; padding: 10px; border: 1px solid #99bce8; border-radius: 4px; font-family: inherit; font-size: 13px; resize: none; height: 40px; }
         .send-btn { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); border: 1px solid #99bce8; border-radius: 4px; padding: 0 20px; font-weight: bold; color: #003366; cursor: pointer; }
-        
         .tela-auth { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
         .auth-box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; border: 1px solid #99bce8; width: 80%; max-width: 320px;}
         .auth-box h1 { color: #003366; font-size: 22px; margin-top: 0; }
@@ -97,7 +97,6 @@
         .auth-box p { font-size: 11px; color: #666; margin-bottom: 10px; }
         .msg-erro { color: #e81123; font-size: 12px; margin-top: 5px; display: none; }
         
-        /* TELA DE CARREGAMENTO */
         #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2500; }
         .spinner { border: 4px solid #d1e0f5; border-top: 4px solid #003366; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -239,7 +238,6 @@
             </div>
         </div>
 
-        <!-- NOVA TELA DE CARREGAMENTO -->
         <div id="loading-screen" class="hidden">
             <div class="spinner"></div>
             <div id="loading-text">Aguarde...</div>
@@ -291,7 +289,6 @@
             } catch (error) {}
         }
 
-        // CONTROLE DO LOADING
         function mostrarLoading(texto) {
             document.getElementById('loading-text').innerText = texto;
             document.getElementById('loading-screen').classList.remove('hidden');
@@ -310,7 +307,6 @@
 
             onAuthStateChanged(auth, (user) => {
                 if (user) {
-                    // Se a pessoa já estava logada, mostra a tela de carregamento
                     if(!sessaoIniciada) mostrarLoading("Carregando perfil...");
                     
                     setTimeout(() => {
@@ -325,7 +321,7 @@
                                 document.getElementById('my-status').value = meuStatus;
                                 document.getElementById('my-recado').value = meuRecado;
                                 
-                                esconderLoading(); // Esconde a tela de carregamento
+                                esconderLoading(); 
                                 iniciarSessao();
                             } else {
                                 esconderLoading();
@@ -361,14 +357,14 @@
                 errorDiv.innerText = "Preencha apelido e senha."; errorDiv.style.display = 'block'; return; 
             }
 
-            mostrarLoading("Entrando..."); // Mostra o loading
+            mostrarLoading("Entrando..."); 
 
             get(ref(db, 'nicknames/' + nome)).then((snapshot) => {
                 if (snapshot.exists()) {
                     const emailReal = snapshot.val().email;
                     window.signInWithEmailAndPassword(auth, emailReal, senha)
                         .catch((error) => {
-                            esconderLoading(); // Esconde se der erro
+                            esconderLoading(); 
                             if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                                 errorDiv.innerText = "Senha incorreta."; errorDiv.style.display = 'block';
                             } else {
@@ -376,7 +372,7 @@
                             }
                         });
                 } else {
-                    esconderLoading(); // Esconde se não achar
+                    esconderLoading(); 
                     errorDiv.innerText = "Apelido não encontrado. Crie uma conta."; errorDiv.style.display = 'block';
                 }
             }).catch((err) => {
@@ -403,7 +399,7 @@
                 errorDiv.innerText = "A senha precisa ter no mínimo 6 caracteres."; errorDiv.style.display = 'block'; return; 
             }
 
-            mostrarLoading("Registrando conta..."); // Mostra o loading
+            mostrarLoading("Registrando conta..."); 
 
             get(ref(db, 'nicknames/' + nome.toLowerCase())).then((snapshot) => {
                 if (snapshot.exists()) {
@@ -423,7 +419,7 @@
                             set(ref(db, 'nicknames/' + nome.toLowerCase()), { email: email, uid: user.uid });
                         })
                         .catch((err) => {
-                            esconderLoading(); // Esconde se der erro
+                            esconderLoading(); 
                             if(err.code === 'auth/email-already-in-use') {
                                 errorDiv.innerText = "Este e-mail já está cadastrado."; 
                             } else {
@@ -499,7 +495,6 @@
             configurarNotificacoesPM();
         }
 
-        // O resto do código continua igual (renderizarListas, abrirAbaPrivada, etc.)
         function renderizarListas() {
             const globalList = document.getElementById('global-list');
             const friendsList = document.getElementById('my-friends-list');
@@ -698,6 +693,7 @@
         function adicionarEmoji(emoji) { const input = document.getElementById('chat-input'); input.value += emoji; input.focus(); }
         function enviarMensagemSistema(texto) { if (firebaseReady) set(push(ref(db, 'messages')), { tipo: 'sistema', texto: texto, timestamp: serverTimestamp() }); }
 
+        // LÓGICA DE MENSAGENS BLINDADA E CORRIGIDA
         function renderizarMensagens(messages, idAbaAtual) {
             const history = document.getElementById('chat-history');
             history.innerHTML = '';
@@ -706,21 +702,10 @@
             const msgArray = Object.entries(messages).map(([id, data]) => ({ id, ...data }));
             msgArray.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
+            let idUltimaMsg = null;
+
             msgArray.forEach(msg => {
                 const isMeu = msg.idAutor === meuId; 
-
-                if (ultimaMsgId !== null && msg.id !== ultimaMsgId) {
-                    if (idAbaAtual === 'global' || msg.idAlvo === meuId) {
-                        if (msg.tipo === 'peido') {
-                            tocarAudio(audioPeido); 
-                        } else if (msg.tipo === 'nudge') {
-                            tocarAudio(audioAlerta); 
-                        } else if (!isMeu) {
-                            if (msg.tipo === 'texto') tocarAudio(audioEnvio);
-                            else if (msg.tipo === 'dedo') tocarAudio(audioAlerta);
-                        }
-                    }
-                }
 
                 if (msg.tipo === 'texto') {
                     const div = document.createElement('div');
@@ -736,9 +721,7 @@
                     history.appendChild(div);
                 }
                 else if (msg.tipo === 'nudge') {
-                    document.getElementById('msn-window').classList.add('nudge-animation');
-                    setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
-
+                    // A tela treme para todos que estão vendo a mensagem
                     const div = document.createElement('div');
                     div.style.cssText = 'text-align:center; font-size:11px; color:#e74c3c; font-weight:bold; margin:5px 0;';
                     div.innerText = isMeu ? `🔔 Você chamou a atenção!` : `🔔 ${msg.autor} chamou a atenção!`;
@@ -753,10 +736,6 @@
                 else if (msg.tipo === 'dedo') {
                     const div = document.createElement('div');
                     if (msg.idAlvo === meuId) {
-                        if (!isMeu && ultimaMsgId !== msg.id) {
-                            document.getElementById('msn-window').classList.add('nudge-animation');
-                            setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
-                        }
                         div.style.cssText = 'text-align:center; font-size:14px; color:#e81123; font-weight:bold; margin:10px 0; background:#ffe6e6; padding:8px; border-radius:5px; border: 1px solid #ffcccc;';
                         div.innerText = `🖕 ${msg.autor} te mandou um dedo do meio!`;
                     } else {
@@ -766,6 +745,10 @@
                     history.appendChild(div);
                 }
 
+                // Salva o ID da última mensagem processada no loop
+                idUltimaMsg = msg.id;
+
+                // Lógica de abas não lidas
                 if (!isMeu && ultimaMsgId !== msg.id) {
                     if (msg.idAlvo === meuId && idAbaAtual !== abaAtiva) {
                         const chatId = [meuId, msg.idAutor].sort().join('__'); 
@@ -774,8 +757,35 @@
                         renderizarAbas();
                     }
                 }
-                ultimaMsgId = msg.id;
             });
+
+            // O SOM E A TREMEDA SÓ ACONTECEM APÓS O LOOP, SE A ÚLTIMA MENSAGEM FOR NOVA
+            if (idUltimaMsg && idUltimaMsg !== ultimaMsgId) {
+                const msg = msgArray[msgArray.length - 1];
+                const isMeu = msg.idAutor === meuId;
+
+                if (idAbaAtual === 'global' || msg.idAlvo === meuId) {
+                    if (msg.tipo === 'peido') {
+                        tocarAudio(audioPeido);
+                    } else if (msg.tipo === 'nudge') {
+                        tocarAudio(audioAlerta);
+                        document.getElementById('msn-window').classList.add('nudge-animation');
+                        setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
+                    } else if (!isMeu) {
+                        if (msg.tipo === 'texto') tocarAudio(audioEnvio);
+                        else if (msg.tipo === 'dedo') {
+                            tocarAudio(audioAlerta);
+                            if(msg.idAlvo === meuId) {
+                                document.getElementById('msn-window').classList.add('nudge-animation');
+                                setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
+                            }
+                        }
+                    }
+                }
+                // Atualiza o rastreador global para não tocar o som 2 vezes
+                ultimaMsgId = idUltimaMsg; 
+            }
+
             history.scrollTop = history.scrollHeight;
         }
 
