@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MSN Livre - 2009</title>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR5Fq5yem9xjolIhgkLd9M5JVGWb_llI",
+            authDomain: "msn-tcc.firebaseapp.com",
+            databaseURL: "https://msn-tcc-default-rtdb.firebaseio.com",
+            projectId: "msn-tcc",
+            storageBucket: "msn-tcc.firebasestorage.app",
+            messagingSenderId: "834586340778",
+            appId: "1:834586340778:web:3d363296bc7e9a7bc64fd3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        window.db = db; window.ref = ref; window.push = push; window.set = set; window.update = update;
+        window.onValue = onValue; window.onDisconnect = onDisconnect; window.remove = remove; 
+        window.serverTimestamp = serverTimestamp; window.off = off; window.get = get;
+        window.auth = auth; window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.sendPasswordResetEmail = sendPasswordResetEmail;
+        window.onAuthStateChanged = onAuthStateChanged; window.signOut = signOut;
+        
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #8ab4f8; background-image: url('https://images.unsplash.com/photo-1554034483-04fda0d3507b?q=80&w=2000&auto=format&fit=crop'); background-size: cover; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        .logo-magica { mix-blend-mode: multiply; }
+        .msn-window { width: 850px; height: 600px; background: #e3efff; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #99bce8; position: relative; }
+        .title-bar { background: linear-gradient(to bottom, #d1e0f5, #a7c8f0); height: 38px; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; border-bottom: 1px solid #8ab4f8; cursor: default; flex-shrink: 0; }
+        .title-text { font-weight: bold; color: #003366; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+        .title-text img { height: 28px; width: auto; } 
+        .window-controls { display: flex; gap: 5px; }
+        .win-btn { width: 20px; height: 20px; border-radius: 3px; border: 1px solid #7f9db9; background: #d1e0f5; cursor: pointer; font-size: 10px; display: flex; justify-content: center; align-items: center; font-weight: bold;}
+        .win-btn.close { background: #e81123; color: white; border-color: #c50f1f; }
+        .main-area { display: flex; flex: 1; overflow: hidden; }
+        
+        .sidebar { width: 260px; background: white; border-right: 1px solid #b2c7e3; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+        .user-profile { padding: 10px; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; text-align: center; position: relative; flex-shrink: 0;}
+        .avatar { width: 50px; height: 50px; background: #a7c8f0; border-radius: 5px; margin: 0 auto 5px; display: flex; justify-content: center; align-items: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; } 
+        .avatar img { width: 100%; height: 100%; object-fit: contain; padding: 5px; } 
+        .user-name-display { font-weight: bold; color: #003366; font-size: 13px; margin-bottom: 5px; display: flex; justify-content: center; align-items: center; gap: 5px;}
+        .btn-sair { font-size: 10px; background: #e81123; color: white; border: none; border-radius: 3px; padding: 2px 6px; cursor: pointer; }
+        .status-selector { width: 95%; padding: 3px; margin-bottom: 5px; border: 1px solid #99bce8; border-radius: 3px; font-size: 11px; color: #003366; background: white; cursor: pointer; outline: none; }
+        .user-recado { font-size: 11px; color: #666; font-style: italic; width: 95%; border: 1px solid #ccc; padding: 3px; box-sizing: border-box; border-radius: 3px;}
+
+        .contacts-header { background: #e3efff; padding: 5px 10px; font-size: 11px; font-weight: bold; color: #003366; display: flex; justify-content: space-between; border-bottom: 1px solid #b2c7e3; border-top: 1px solid #b2c7e3; flex-shrink: 0;}
+        .contact-list { list-style: none; padding: 0; margin: 0; min-height: 50px; flex-shrink: 0; }
+        .contact-item { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px; color: #333; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; }
+        .contact-item:hover { background: #f0f5fc; }
+        
+        .btn-ver-mais { padding: 5px 10px; text-align: center; font-size: 11px; color: #003366; background: #f0f5fc; border-bottom: 1px solid #d1e0f5; cursor: pointer; font-weight: bold; user-select: none; display: block; text-decoration: underline; }
+        .btn-ver-mais:hover { background: #e3efff; }
+
+        .btn-add-friend { background: #4caf50; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 14px; line-height: 1; display: flex; justify-content: center; align-items: center; cursor: pointer; margin-left: auto; }
+        .btn-add-friend:hover { background: #388e3c; }
+        .status-icon { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0,0,0,0.2); flex-shrink: 0;}
+        .status-online { background: #4caf50; }
+        .status-ausente { background: #ffeb3b; }
+        .status-ocupado { background: #f44336; }
+        .status-invisivel { background: #bdc3c7; }
+
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: white; overflow: hidden; }
+        .tab-bar { display: flex; background: #d1e0f5; border-bottom: 1px solid #99bce8; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+        .tab-bar::-webkit-scrollbar { display: none; }
+        .tab { padding: 6px 12px; background: #e3efff; border-right: 1px solid #99bce8; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 120px; max-width: 180px; white-space: nowrap; color: #555; user-select: none; }
+        .tab.active { background: white; border-bottom: 2px solid white; margin-bottom: -1px; font-weight: bold; color: #003366; }
+        .tab-close { font-size: 10px; background: #ccc; border-radius: 50%; width: 16px; height: 16px; display: flex; justify-content: center; align-items: center; margin-left: auto; color: white; }
+        .tab-close:hover { background: #e81123; }
+        .tab.unread .tab-close { background: #f39c12; animation: pulse 1s infinite; }
+        .chat-history { flex: 1; padding: 15px; overflow-y: auto; background: #ffffff; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 5px; font-size: 13px; line-height: 1.4; word-wrap: break-word; }
+        .msg.sent { align-self: flex-end; background: #dcf8c6; border: 1px solid #c4e8a9; }
+        .msg.received { align-self: flex-start; background: #f0f5fc; border: 1px solid #d1e0f5; }
+        .msg-sender { font-size: 10px; color: #666; margin-bottom: 3px; font-weight: bold; }
+        .msg-time { font-size: 9px; color: #999; text-align: right; margin-top: 3px; }
+        .typing-area { padding: 10px; background: #e3efff; border-top: 1px solid #b2c7e3; display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+        .toolbar { display: flex; gap: 5px; flex-wrap: wrap; }
+        .toolbar button { background: #d1e0f5; border: 1px solid #99bce8; border-radius: 3px; cursor: pointer; padding: 3px 8px; font-size: 14px; }
+        .toolbar button:hover { background: #a7c8f0; }
+        .input-row { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 10px; border: 1px solid #99bce8; border-radius: 4px; font-family: inherit; font-size: 13px; resize: none; height: 40px; }
+        .send-btn { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); border: 1px solid #99bce8; border-radius: 4px; padding: 0 20px; font-weight: bold; color: #003366; cursor: pointer; }
+
+        .tela-auth { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        .auth-box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; border: 1px solid #99bce8; width: 80%; max-width: 320px;}
+        .auth-box h1 { color: #003366; font-size: 22px; margin-top: 0; }
+        .auth-box input { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #99bce8; border-radius: 4px; box-sizing: border-box; }
+        .btn-principal { width: 100%; padding: 12px; margin-top: 10px; background: linear-gradient(to bottom, #4caf50, #388e3c); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-secundario { width: 100%; padding: 10px; margin-top: 8px; background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); color: #003366; border: 1px solid #99bce8; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-link { width: 100%; padding: 5px; margin-top: 5px; background: transparent; color: #003366; border: none; text-decoration: underline; cursor: pointer; font-size: 12px;}
+        .auth-box p { font-size: 11px; color: #666; margin-bottom: 10px; }
+        .msg-erro { color: #e81123; font-size: 12px; margin-top: 5px; display: none; }
+        
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2500; }
+        .spinner { border: 4px solid #d1e0f5; border-top: 4px solid #003366; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-text { color: #003366; font-weight: bold; font-size: 14px; }
+
+        #modal-dedo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-dedo-box { background: #f0f5fc; padding: 20px; border-radius: 6px; border: 1px solid #99bce8; width: 80%; max-width: 250px; text-align: center; }
+        .modal-dedo-box select { width: 100%; padding: 8px; margin: 10px 0; }
+        .modal-dedo-box button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-enviar-dedo { background: #e81123; color: white; }
+        .btn-cancelar { background: #ccc; color: #333; }
+
+        /* CORREÇÃO DO TOAST (MENOR E NO TOPO) */
+        #toast-container { position: absolute; top: 50px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; align-items: flex-end;}
+        .toast { background: #333; color: white; padding: 8px 15px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; border-left: 5px solid #4caf50; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.fade-out { animation: slideOut 0.3s ease-in forwards; }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        .nudge-animation { animation: shake 0.5s; animation-iteration-count: 1; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .hidden { display: none !important; }
+
+        /* CORREÇÃO DO CELULAR (LISTA MENOR) */
+        @media (max-width: 850px) {
+            body { align-items: flex-start; }
+            .msn-window { width: 100%; height: 100dvh; border-radius: 0; border: none; }
+            .main-area { flex-direction: column; }
+            /* Barra lateral ocupa no máximo 25% da tela */
+            .sidebar { width: 100%; height: 25%; max-height: 180px; border-right: none; border-bottom: 2px solid #99bce8; }
+            .user-profile { padding: 5px; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+            .avatar { width: 35px; height: 35px; margin: 0; flex-shrink: 0; }
+            .user-info-mobile { display: flex; flex-direction: column; flex: 1; }
+            .user-name-display { margin-bottom: 2px; justify-content: flex-start;}
+            .status-selector { width: 100%; padding: 2px; margin-bottom: 2px; font-size: 10px;}
+            .user-recado { width: 100%; font-size: 10px; }
+            .contacts-header { padding: 3px 8px; font-size: 10px; }
+            .contact-item { padding: 4px 8px; font-size: 11px; }
+            .chat-area { height: 75%; flex: 1; }
+            .toolbar button { padding: 6px 10px; font-size: 14px; }
+            .chat-input { font-size: 16px; height: 40px; }
+            
+            /* Toasts menores e no topo */
+            #toast-container { top: 40px; right: 10px; bottom: auto; left: auto; }
+            .toast { padding: 6px 10px; font-size: 10px; max-width: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="som-alerta" src="https://www.myinstants.com/media/sounds/nudge.mp3?v=1" preload="auto"></audio>
+    <audio id="som-envio" src="https://www.myinstants.com/media/sounds/msn-sound_1.mp3?v=2" preload="auto"></audio>
+    <audio id="som-peido" src="https://www.myinstants.com/media/sounds/fart-with-reverb.mp3?v=3" preload="auto"></audio>
+
+    <div class="msn-window" id="msn-window">
+        <div class="title-bar">
+            <div class="title-text">
+                <img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="MSN Logo">
+                MSN Livre
+            </div>
+            <div class="window-controls">
+                <div class="win-btn close" onclick="fazerLogout()">X</div>
+            </div>
+        </div>
+
+        <div class="main-area">
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="avatar">
+                        <img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="Avatar">
+                    </div>
+                    <div class="user-info-mobile">
+                        <div class="user-name-display">
+                            <span id="my-name-display">...</span>
+                            <button class="btn-sair" onclick="fazerLogout()">Sair</button>
+                        </div>
+                        <select id="my-status" class="status-selector" onchange="mudarStatus(this.value)">
+                            <option value="online">🟢 Online</option>
+                            <option value="ausente">🟡 Ausente</option>
+                            <option value="ocupado">🔴 Ocupado</option>
+                            <option value="invisivel">⚪ Invisível</option>
+                        </select>
+                        <input type="text" class="user-recado" id="my-recado" placeholder="Seu recado..." maxlength="30" onchange="atualizarRecado()">
+                    </div>
+                </div>
+                
+                <div class="contacts-header">
+                    <span>Meus Contatos</span>
+                </div>
+                <ul class="contact-list" id="my-friends-list"></ul>
+                <div id="btn-mais-amigos" class="btn-ver-mais hidden" onclick="toggleAmigos()"></div>
+
+                <div class="contacts-header">
+                    <span>Todos Online (Global)</span>
+                    <span id="online-count">(0)</span>
+                </div>
+                <ul class="contact-list" id="global-list"></ul>
+                <div id="btn-mais-global" class="btn-ver-mais hidden" onclick="toggleGlobal()"></div>
+            </div>
+
+            <div class="chat-area">
+                <div class="tab-bar" id="tab-bar"></div>
+                <div class="chat-history" id="chat-history"></div>
+                <div class="typing-area">
+                    <div class="toolbar">
+                        <button title="Nudge" onclick="enviarNudge()">🔔 Nudge</button>
+                        <button title="Peido" onclick="enviarPeido()">💨 Peido</button>
+                        <button title="Dedo" onclick="abrirSeletorDedo()" style="color: #e81123; font-weight: bold;">🖕 Dedo</button>
+                        <button onclick="adicionarEmoji('😊')">😊</button>
+                        <button onclick="adicionarEmoji('😂')">😂</button>
+                        <button onclick="adicionarEmoji('❤️')">❤️</button>
+                    </div>
+                    <div class="input-row">
+                        <textarea class="chat-input" id="chat-input" placeholder="Digite sua mensagem..." onkeypress="handleKeyPress(event)"></textarea>
+                        <button class="send-btn" onclick="enviarMensagem()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="login-screen" class="tela-auth">
+            <div class="auth-box">
+                <img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="MSN Logo" style="height: 50px; margin-bottom: 5px;">
+                <h1>MSN Livre</h1>
+                <p>Entre com seu apelido <b>ou</b> e-mail.</p>
+                <input type="text" id="login-name" placeholder="Apelido ou E-mail" maxlength="40">
+                <input type="password" id="login-pass" placeholder="Sua Senha">
+                <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
+                <button class="btn-secundario" onclick="mostrarTelaCadastro()">Criar Nova Conta</button>
+                <button class="btn-link" onclick="recuperarSenha()">Esqueci a senha</button>
+                <div id="login-error" class="msg-erro"></div>
+            </div>
+        </div>
+
+        <div id="cadastro-screen" class="tela-auth hidden">
+            <div class="auth-box">
+                <h1>Criar Conta</h1>
+                <p>Preencha os dados abaixo.<br><strong>Apenas maiores de 18 anos.</strong></p>
+                <input type="text" id="reg-name" placeholder="Seu Apelido (sem espaços)" maxlength="15">
+                <input type="email" id="reg-email" placeholder="Seu E-mail Real (para recuperação)">
+                <input type="password" id="reg-pass" placeholder="Sua Senha (mín. 6 carac.)">
+                <input type="number" id="reg-age" placeholder="Sua Idade" min="18">
+                <button class="btn-principal" onclick="fazerCadastro()">Cadastrar</button>
+                <button class="btn-secundario" onclick="voltarParaLogin()">Voltar para o Login</button>
+                <div id="cadastro-error" class="msg-erro"></div>
+            </div>
+        </div>
+
+        <div id="loading-screen" class="hidden">
+            <div class="spinner"></div>
+            <div id="loading-text">Aguarde...</div>
+        </div>
+
+        <div id="modal-dedo" class="hidden">
+            <div class="modal-dedo-box">
+                <h3>Para quem?</h3>
+                <select id="select-dedo"></select>
+                <button class="btn-enviar-dedo" onclick="enviarDedo()">Enviar 🖕</button>
+                <button class="btn-cancelar" onclick="fecharSeletorDedo()">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="toast-container"></div>
+    </div>
+
+    <script>
+        let meuId = "";
+        let meuNome = "";
+        let meuStatus = "online";
+        let meuRecado = "Disponível";
+        
+        let db, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get;
+        let auth, onAuthStateChanged, signOut;
+        let firebaseReady = false;
+        let sessaoIniciada = false; 
+        
+        let abasAbertas = [{ id: 'global', nome: 'Chat Geral' }];
+        let abaAtiva = 'global';
+        let msgListenerAtual = null;
+        let ultimaMsgId = null;
+        
+        let usuariosOnline = {}; 
+        let meusAmigos = {}; 
+        let abasNaoLidas = {}; 
+        let usuariosConhecidos = {}; 
+
+        let expandirAmigos = false;
+        let expandirGlobal = false;
+        const LIMITE_LISTA = 3;
+
+        const audioAlerta = document.getElementById('som-alerta');
+        const audioEnvio = document.getElementById('som-envio');
+        const audioPeido = document.getElementById('som-peido');
+
+        function tocarAudio(audioElement) {
+            if (!audioElement) return;
+            try {
+                audioElement.pause();          
+                audioElement.currentTime = 0;  
+                audioElement.play().catch(e => console.log("Navegador bloqueou o áudio."));
+            } catch (error) {}
+        }
+
+        function mostrarLoading(texto) {
+            document.getElementById('loading-text').innerText = texto;
+            document.getElementById('loading-screen').classList.remove('hidden');
+        }
+
+        function esconderLoading() {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+
+        // INICIALIZAÇÃO
+        window.addEventListener('firebaseReady', () => {
+            db = window.db; ref = window.ref; push = window.push; set = window.set; update = window.update;
+            onValue = window.onValue; onDisconnect = window.onDisconnect; remove = window.remove; 
+            serverTimestamp = window.serverTimestamp; off = window.off; get = window.get;
+            auth = window.auth; onAuthStateChanged = window.onAuthStateChanged; signOut = window.signOut;
+            firebaseReady = true;
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    if(!sessaoIniciada) mostrarLoading("Carregando perfil...");
+                    
+                    get(ref(db, 'users/' + user.uid)).then((snapshot) => {
+                        if (!sessaoIniciada) {
+                            if (snapshot.exists()) {
+                                const dados = snapshot.val();
+                                meuId = user.uid;
+                                meuNome = dados.nome || (user.email ? user.email.split('@')[0] : "Usuário");
+                                meuStatus = dados.status || 'online';
+                                meuRecado = dados.recado || 'Disponível';
+                            } else {
+                                meuId = user.uid;
+                                meuNome = user.email ? user.email.split('@')[0] : "Usuário";
+                                meuStatus = 'online';
+                                meuRecado = 'Disponível';
+                                set(ref(db, 'users/' + meuId), { nome: meuNome, status: meuStatus, recado: meuRecado });
+                            }
+                            
+                            document.getElementById('my-status').value = meuStatus;
+                            document.getElementById('my-recado').value = meuRecado;
+                            
+                            esconderLoading(); 
+                            iniciarSessao();
+                        }
+                    }).catch((err) => {
+                        if (!sessaoIniciada) {
+                            meuId = user.uid;
+                            meuNome = user.email ? user.email.split('@')[0] : "Usuário";
+                            esconderLoading();
+                            iniciarSessao();
+                        }
+                    });
+                } else {
+                    sessaoIniciada = false;
+                    esconderLoading();
+                    document.getElementById('login-screen').classList.remove('hidden');
+                }
+            });
+        });
+
+        function mostrarTelaCadastro() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('cadastro-screen').classList.remove('hidden');
+            document.getElementById('login-error').style.display = 'none';
+        }
+
+        function voltarParaLogin() {
+            document.getElementById('cadastro-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('cadastro-error').style.display = 'none';
+        }
+
+        // LOGIN COM APELIDO OU E-MAIL (MELHORADO)
+        function fazerLogin() {
+            if (!firebaseReady) {
+                alert("O sistema ainda está conectando. Aguarde 2 segundos e tente novamente.");
+                return;
+            }
+
+            const nomeDigitado = document.getElementById('login-name').value.trim();
+            const senha = document.getElementById('login-pass').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.style.display = 'none';
+
+            if (!nomeDigitado || !senha) { 
+                errorDiv.innerText = "Preencha todos os campos."; errorDiv.style.display = 'block'; return; 
+            }
+
+            mostrarLoading("Entrando..."); 
+
+            const timeoutId = setTimeout(() => {
+                esconderLoading();
+                errorDiv.innerText = "O servidor demorou muito para responder. Verifique sua internet."; 
+                errorDiv.style.display = 'block';
+            }, 12000);
+
+            if (nomeDigitado.includes('@')) {
+                // LOGIN COM E-MAIL REAL
+                window.signInWithEmailAndPassword(auth, nomeDigitado, senha)
+                    .then(() => {
+                        clearTimeout(timeoutId); 
+                        document.getElementById('loading-text').innerText = "Carregando perfil...";
+                    })
+                    .catch((error) => {
+                        clearTimeout(timeoutId); 
+                        esconderLoading(); 
+                        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                            errorDiv.innerText = "Senha incorreta."; errorDiv.style.display = 'block';
+                        } else {
+                            errorDiv.innerText = "Erro: " + error.message; errorDiv.style.display = 'block';
+                        }
+                    });
+            } else {
+                // LOGIN COM APELIDO
+                const nomeFormatado = nomeDigitado.toLowerCase().replace(/\s+/g, '');
+                get(ref(db, 'nicknames/' + nomeFormatado)).then((snapshot) => {
+                    let emailTentativa = `${nomeFormatado}@msnlivre.app`; 
+                    
+                    // Se achou no banco, usa o e-mail real. Se não achou, usa o fake (conta antiga).
+                    if (snapshot.exists() && snapshot.val().email) {
+                        emailTentativa = snapshot.val().email;
+                    }
+
+                    window.signInWithEmailAndPassword(auth, emailTentativa, senha)
+                        .then(() => {
+                            clearTimeout(timeoutId); 
+                            document.getElementById('loading-text').innerText = "Carregando perfil...";
+                        })
+                        .catch((error) => {
+                            clearTimeout(timeoutId); 
+                            esconderLoading(); 
+                            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                                errorDiv.innerText = "Senha incorreta."; errorDiv.style.display = 'block';
+                            } else {
+                                errorDiv.innerText = "Conta não encontrada. Verifique o apelido ou crie uma nova."; errorDiv.style.display = 'block';
+                            }
+                        });
+                }).catch((err) => {
+                    clearTimeout(timeoutId);
+                    esconderLoading();
+                    errorDiv.innerText = "Erro de conexão. Tente novamente."; errorDiv.style.display = 'block';
+                });
+            }
+        }
+
+        function fazerCadastro() {
+            if (!firebaseReady) {
+                alert("O sistema ainda está conectando. Aguarde 2 segundos e tente novamente.");
+                return;
+            }
+
+            const nome = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const senha = document.getElementById('reg-pass').value;
+            const idade = document.getElementById('reg-age').value.trim();
+            const errorDiv = document.getElementById('cadastro-error');
+            errorDiv.style.display = 'none';
+
+            if (!nome || !email || !senha || !idade) { 
+                errorDiv.innerText = "Preencha todos os campos."; errorDiv.style.display = 'block'; return; 
+            }
+            if (parseInt(idade) < 18) { 
+                errorDiv.innerText = "Acesso Negado! Apenas maiores de 18."; errorDiv.style.display = 'block'; return; 
+            }
+            if (senha.length < 6) { 
+                errorDiv.innerText = "A senha precisa ter no mínimo 6 caracteres."; errorDiv.style.display = 'block'; return; 
+            }
+
+            mostrarLoading("Registrando conta..."); 
+
+            const timeoutId = setTimeout(() => {
+                esconderLoading();
+                errorDiv.innerText = "O servidor demorou muito para responder. Verifique sua internet."; 
+                errorDiv.style.display = 'block';
+            }, 12000);
+
+            get(ref(db, 'nicknames/' + nome.toLowerCase())).then((snapshot) => {
+                if (snapshot.exists()) {
+                    clearTimeout(timeoutId);
+                    esconderLoading();
+                    errorDiv.innerText = "Este apelido já está em uso. Escolha outro."; errorDiv.style.display = 'block';
+                } else {
+                    window.createUserWithEmailAndPassword(auth, email, senha)
+                        .then((userCredential) => {
+                            clearTimeout(timeoutId);
+                            const user = userCredential.user;
+                            set(ref(db, 'users/' + user.uid), {
+                                nome: nome,
+                                email: email,
+                                idade: idade,
+                                status: 'online',
+                                recado: 'Disponível'
+                            });
+                            set(ref(db, 'nicknames/' + nome.toLowerCase()), { email: email, uid: user.uid });
+                        })
+                        .catch((err) => {
+                            clearTimeout(timeoutId);
+                            esconderLoading(); 
+                            if(err.code === 'auth/email-already-in-use') {
+                                errorDiv.innerText = "Este e-mail já está cadastrado."; 
+                            } else {
+                                errorDiv.innerText = "Erro ao criar conta: " + err.message; 
+                            }
+                            errorDiv.style.display = 'block';
+                        });
+                }
+            }).catch((err) => {
+                clearTimeout(timeoutId);
+                esconderLoading();
+                errorDiv.innerText = "Erro de conexão. Tente novamente."; errorDiv.style.display = 'block';
+            });
+        }
+
+        function recuperarSenha() {
+            const nome = prompt("Digite seu apelido ou e-mail para recuperar a senha:");
+            if (!nome) return;
+
+            if (nome.includes('@')) {
+                window.sendPasswordResetEmail(auth, nome)
+                    .then(() => { alert(`Link enviado para ${nome}. Verifique seu e-mail.`); })
+                    .catch((error) => { alert("Erro: " + error.message); });
+            } else {
+                get(ref(db, 'nicknames/' + nome.toLowerCase())).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const emailReal = snapshot.val().email;
+                        window.sendPasswordResetEmail(auth, emailReal)
+                            .then(() => { alert(`Link enviado para ${emailReal}. Verifique seu e-mail.`); })
+                            .catch((error) => { alert("Erro: " + error.message); });
+                    } else {
+                        alert("Apelido não encontrado. Contas muito antigas precisam criar uma nova conta.");
+                    }
+                });
+            }
+        }
+
+        function fazerLogout() {
+            if (auth) {
+                window.signOut(auth).then(() => {
+                    if (meuId) remove(ref(db, 'users/' + meuId)); // Remove do banco ao sair
+                    window.location.reload();
+                });
+            }
+        }
+
+        function iniciarSessao() {
+            if (sessaoIniciada) return; 
+            sessaoIniciada = true;
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('cadastro-screen').classList.add('hidden');
+            document.getElementById('my-name-display').innerText = meuNome;
+
+            salvarPerfilNoBanco();
+            
+            // GARANTE QUE O USUÁRIO SEJA REMOVIDO SE FECHAR A ABA
+            onDisconnect(ref(db, 'users/' + meuId)).remove();
+
+            onValue(ref(db, 'users'), (snapshot) => { 
+                const novosUsuarios = snapshot.val() || {};
+                Object.keys(novosUsuarios).forEach(key => {
+                    const user = novosUsuarios[key];
+                    if (user.nome && user.status !== 'invisivel' && key !== meuId && !usuariosConhecidos[key]) {
+                        mostrarToast(user.nome);
+                    }
+                });
+                usuariosConhecidos = { ...novosUsuarios };
+                usuariosOnline = novosUsuarios;
+                renderizarListas(); 
+            });
+
+            onValue(ref(db, 'friends/' + meuId), (snapshot) => {
+                meusAmigos = snapshot.val() || {};
+                renderizarListas();
+            });
+
+            renderizarAbas();
+            mudarAba('global');
+            enviarMensagemSistema(`${meuNome} entrou no chat!`);
+            configurarNotificacoesPM();
+        }
+
+        // CONTROLES DA UI
+        function toggleAmigos() { expandirAmigos = !expandirAmigos; renderizarListas(); }
+        function toggleGlobal() { expandirGlobal = !expandirGlobal; renderizarListas(); }
+
+        function renderizarListas() {
+            const globalList = document.getElementById('global-list');
+            const friendsList = document.getElementById('my-friends-list');
+            const btnMaisAmigos = document.getElementById('btn-mais-amigos');
+            const btnMaisGlobal = document.getElementById('btn-mais-global');
+            
+            globalList.innerHTML = ''; friendsList.innerHTML = '';
+            btnMaisAmigos.classList.add('hidden'); btnMaisGlobal.classList.add('hidden');
+
+            let countGlobal = 0;
+            let listaGlobalCompleta = [];
+            let listaAmigosCompleta = [];
+
+            if (usuariosOnline) {
+                Object.keys(usuariosOnline).forEach(key => {
+                    const user = usuariosOnline[key];
+                    if (user.status === 'invisivel' && key !== meuId) return;
+                    if (user.nome) {
+                        countGlobal++;
+                        listaGlobalCompleta.push({ key, user });
+                        if (meusAmigos[key]) listaAmigosCompleta.push({ key, user });
+                    }
+                });
+            }
+
+            if (listaAmigosCompleta.length === 0) {
+                friendsList.innerHTML = '<li style="font-size:10px; color:#999; padding:10px; text-align:center;">Clique no + na lista Global.</li>';
+            } else {
+                let exibirAmigos = expandirAmigos ? listaAmigosCompleta : listaAmigosCompleta.slice(0, LIMITE_LISTA);
+                exibirAmigos.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'contact-item';
+                    li.innerHTML = `
+                        <span class="status-icon ${getStatusClass(item.user.status)}"></span>
+                        <div style="display:flex; flex-direction:column; flex:1;" onclick="abrirAbaPrivada('${item.key}', '${item.user.nome}')">
+                            <strong>${item.user.nome}</strong> 
+                            <span style="font-size:10px; color:#666;">${item.user.recado || ''}</span>
+                        </div>
+                    `;
+                    friendsList.appendChild(li);
+                });
+                if (listaAmigosCompleta.length > LIMITE_LISTA) {
+                    btnMaisAmigos.classList.remove('hidden');
+                    btnMaisAmigos.innerText = expandirAmigos ? `Ver menos ▲` : `Ver mais (${listaAmigosCompleta.length - LIMITE_LISTA}) ▼`;
+                }
+            }
+
+            if (listaGlobalCompleta.length > 0) {
+                let exibirGlobal = expandirGlobal ? listaGlobalCompleta : listaGlobalCompleta.slice(0, LIMITE_LISTA);
+                exibirGlobal.forEach(item => {
+                    const isMeu = item.key === meuId;
+                    const nomeExibicao = isMeu ? `${item.user.nome} (Você)` : item.user.nome;
+                    const clickAction = isMeu ? '' : `onclick="abrirAbaPrivada('${item.key}', '${item.user.nome}')"`;
+                    const li = document.createElement('li');
+                    li.className = 'contact-item';
+                    li.innerHTML = `
+                        <span class="status-icon ${getStatusClass(item.user.status)}"></span>
+                        <div style="display:flex; flex-direction:column; flex:1; cursor:${isMeu ? 'default' : 'pointer'};" ${clickAction}>
+                            <strong style="${isMeu ? 'color:#003366;' : ''}">${nomeExibicao}</strong> 
+                            <span style="font-size:10px; color:#666;">${item.user.recado || ''}</span>
+                        </div>
+                        ${(!meusAmigos[item.key] && !isMeu) ? `<button class="btn-add-friend" title="Adicionar aos Amigos" onclick="adicionarAmigo('${item.key}', event)">+</button>` : ''}
+                    `;
+                    globalList.appendChild(li);
+                });
+                if (listaGlobalCompleta.length > LIMITE_LISTA) {
+                    btnMaisGlobal.classList.remove('hidden');
+                    btnMaisGlobal.innerText = expandirGlobal ? `Ver menos ▲` : `Ver mais (${listaGlobalCompleta.length - LIMITE_LISTA}) ▼`;
+                }
+            }
+            document.getElementById('online-count').innerText = `(${countGlobal})`;
+        }
+
+        function getStatusClass(status) {
+            if (status === 'ausente') return 'status-ausente';
+            if (status === 'ocupado') return 'status-ocupado';
+            if (status === 'invisivel') return 'status-invisivel';
+            return 'status-online';
+        }
+        function adicionarAmigo(idAlvo, event) { event.stopPropagation(); if (firebaseReady && idAlvo) set(ref(db, `friends/${meuId}/${idAlvo}`), true); }
+        
+        // TOAST MENOR
+        function mostrarToast(nome) {
+            const container = document.getElementById('toast-container'); const toast = document.createElement('div'); toast.className = 'toast';
+            toast.innerHTML = `<img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" style="width:20px; height:20px;"><span><strong>${nome}</strong> entrou!</span>`;
+            container.appendChild(toast); setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 300); }, 4000);
+        }
+        
+        function salvarPerfilNoBanco() { if (firebaseReady && meuId) update(ref(db, 'users/' + meuId), { nome: meuNome, status: meuStatus, recado: meuRecado }); }
+        function mudarStatus(novoStatus) { meuStatus = novoStatus; salvarPerfilNoBanco(); }
+        function atualizarRecado() { meuRecado = document.getElementById('my-recado').value || 'Disponível'; salvarPerfilNoBanco(); }
+
+        function renderizarAbas() {
+            const tabBar = document.getElementById('tab-bar'); tabBar.innerHTML = '';
+            abasAbertas.forEach(aba => {
+                const div = document.createElement('div'); div.className = `tab ${abaAtiva === aba.id ? 'active' : ''} ${abasNaoLidas[aba.id] ? 'unread' : ''}`; div.onclick = () => mudarAba(aba.id);
+                let html = `<span>${aba.nome}</span>`; if (aba.id !== 'global') html += `<span class="tab-close" onclick="fecharAba(event, '${aba.id}')">x</span>`;
+                div.innerHTML = html; tabBar.appendChild(div);
+            });
+        }
+        function abrirAbaPrivada(idAlvo, nomeAlvo) { const chatId = [meuId, idAlvo].sort().join('__'); if (!abasAbertas.find(a => a.id === chatId)) abasAbertas.push({ id: chatId, nome: nomeAlvo }); mudarAba(chatId); }
+        function fecharAba(event, idAba) { event.stopPropagation(); abasAbertas = abasAbertas.filter(a => a.id !== idAba); delete abasNaoLidas[idAba]; if (abaAtiva === idAba) mudarAba('global'); else renderizarAbas(); }
+        
+        function mudarAba(idAba) {
+            abaAtiva = idAba; abasNaoLidas[idAba] = false; renderizarAbas(); document.getElementById('chat-history').innerHTML = ''; ultimaMsgId = null; 
+            if (msgListenerAtual && firebaseReady) off(msgListenerAtual);
+            let caminhoBanco = idAba === 'global' ? 'messages' : `private_messages/${idAba}`; msgListenerAtual = ref(db, caminhoBanco);
+            onValue(msgListenerAtual, (snapshot) => { renderizarMensagens(snapshot.val(), idAba); });
+        }
+
+        function enviarMensagem() {
+            const input = document.getElementById('chat-input'); const texto = input.value.trim(); if (!texto) return;
+            if (firebaseReady) {
+                let caminhoBanco = abaAtiva === 'global' ? 'messages' : `private_messages/${abaAtiva}`; let msgRef = push(ref(db, caminhoBanco));
+                let dadosMsg = { tipo: 'texto', autor: meuNome, idAutor: meuId, texto: texto, timestamp: serverTimestamp() };
+                if (abaAtiva !== 'global') dadosMsg.idAlvo = abaAtiva.split('__').find(id => id !== meuId); set(msgRef, dadosMsg);
+            } input.value = '';
+        }
+        function enviarNudge() { if (firebaseReady) { let caminhoBanco = abaAtiva === 'global' ? 'messages' : `private_messages/${abaAtiva}`; let dadosMsg = { tipo: 'nudge', autor: meuNome, idAutor: meuId, timestamp: serverTimestamp() }; if (abaAtiva !== 'global') dadosMsg.idAlvo = abaAtiva.split('__').find(id => id !== meuId); set(push(ref(db, caminhoBanco)), dadosMsg); } }
+        function enviarPeido() { if (firebaseReady) { let caminhoBanco = abaAtiva === 'global' ? 'messages' : `private_messages/${abaAtiva}`; let dadosMsg = { tipo: 'peido', autor: meuNome, idAutor: meuId, timestamp: serverTimestamp() }; if (abaAtiva !== 'global') dadosMsg.idAlvo = abaAtiva.split('__').find(id => id !== meuId); set(push(ref(db, caminhoBanco)), dadosMsg); } }
+        function abrirSeletorDedo() {
+            if (abaAtiva !== 'global') { const idAlvo = abaAtiva.split('__').find(id => id !== meuId); const nomeAlvo = abasAbertas.find(a => a.id === abaAtiva).nome; enviarDedoDireto(idAlvo, nomeAlvo); return; }
+            const select = document.getElementById('select-dedo'); select.innerHTML = ''; let temAlguem = false;
+            Object.keys(usuariosOnline).forEach(key => { const user = usuariosOnline[key]; if (key !== meuId && user.nome && user.status !== 'invisivel') { select.appendChild(new Option(user.nome, key)); temAlguem = true; } });
+            if (!temAlguem) { alert("Ninguém visível online! 😢"); return; } document.getElementById('modal-dedo').classList.remove('hidden');
+        }
+        function fecharSeletorDedo() { document.getElementById('modal-dedo').classList.add('hidden'); }
+        function enviarDedo() { const select = document.getElementById('select-dedo'); enviarDedoDireto(select.value, select.options[select.selectedIndex].text); fecharSeletorDedo(); }
+        function enviarDedoDireto(idAlvo, nomeAlvo) { if (firebaseReady && idAlvo) { const chatId = [meuId, idAlvo].sort().join('__'); set(push(ref(db, `private_messages/${chatId}`)), { tipo: 'dedo', autor: meuNome, idAutor: meuId, idAlvo: idAlvo, nomeAlvo: nomeAlvo, timestamp: serverTimestamp() }); } }
+        function handleKeyPress(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagem(); } }
+        function adicionarEmoji(emoji) { const input = document.getElementById('chat-input'); input.value += emoji; input.focus(); }
+        function enviarMensagemSistema(texto) { if (firebaseReady) set(push(ref(db, 'messages')), { tipo: 'sistema', texto: texto, timestamp: serverTimestamp() }); }
+
+        // CORREÇÃO DO SOM AO ABRIR ABA
+        function renderizarMensagens(messages, idAbaAtual) {
+            const history = document.getElementById('chat-history'); history.innerHTML = ''; if (!messages) return;
+            
+            let isPrimeiraCarga = (ultimaMsgId === null); // Flag para ignorar som na abertura
+
+            const msgArray = Object.entries(messages).map(([id, data]) => ({ id, ...data })); msgArray.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            let idUltimaMsg = null;
+
+            msgArray.forEach(msg => {
+                const isMeu = msg.idAutor === meuId; 
+                if (msg.tipo === 'texto') {
+                    const div = document.createElement('div'); div.className = `msg ${isMeu ? 'sent' : 'received'}`;
+                    const dataHora = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '';
+                    div.innerHTML = `${!isMeu ? `<div class="msg-sender">${msg.autor}</div>` : ''}<div>${msg.texto}</div><div class="msg-time">${dataHora}</div>`; history.appendChild(div);
+                } 
+                else if (msg.tipo === 'sistema') { const div = document.createElement('div'); div.style.cssText = 'text-align:center; font-size:11px; color:#888; margin:5px 0; font-style:italic;'; div.innerText = msg.texto; history.appendChild(div); }
+                else if (msg.tipo === 'nudge') { const div = document.createElement('div'); div.style.cssText = 'text-align:center; font-size:11px; color:#e74c3c; font-weight:bold; margin:5px 0;'; div.innerText = isMeu ? `🔔 Você chamou a atenção!` : `🔔 ${msg.autor} chamou a atenção!`; history.appendChild(div); }
+                else if (msg.tipo === 'peido') { const div = document.createElement('div'); div.style.cssText = 'text-align:center; font-size:13px; color:#1b5e20; font-weight:bold; margin:10px 0; background:#e8f5e9; padding:8px; border-radius:5px; border:1px dashed #4caf50;'; div.innerText = `💨 ${msg.autor} soltou um peido virtual!`; history.appendChild(div); }
+                else if (msg.tipo === 'dedo') {
+                    const div = document.createElement('div');
+                    if (msg.idAlvo === meuId) { div.style.cssText = 'text-align:center; font-size:14px; color:#e81123; font-weight:bold; margin:10px 0; background:#ffe6e6; padding:8px; border-radius:5px; border: 1px solid #ffcccc;'; div.innerText = `🖕 ${msg.autor} te mandou um dedo do meio!`; } 
+                    else { div.style.cssText = 'text-align:center; font-size:11px; color:#888; margin:5px 0; font-style:italic;'; div.innerText = `🖕 ${msg.autor} mandou um dedo do meio para ${msg.nomeAlvo}`; }
+                    history.appendChild(div);
+                }
+                idUltimaMsg = msg.id;
+                if (!isMeu && ultimaMsgId !== msg.id) { 
+                    if (msg.idAlvo === meuId && idAbaAtual !== abaAtiva) { const chatId = [meuId, msg.idAutor].sort().join('__'); abasNaoLidas[chatId] = true; if (!abasAbertas.find(a => a.id === chatId)) abasAbertas.push({ id: chatId, nome: msg.autor }); renderizarAbas(); } 
+                }
+            });
+
+            if (idUltimaMsg && idUltimaMsg !== ultimaMsgId) {
+                const msg = msgArray[msgArray.length - 1]; const isMeu = msg.idAutor === meuId;
+                
+                // SÓ TOCA O SOM SE NÃO FOR A PRIMEIRA CARGA DA TELA E SE A ABA ESTIVER ATIVA
+                if (!isPrimeiraCarga && (idAbaAtual === 'global' || msg.idAlvo === meuId)) {
+                    if (msg.tipo === 'peido') { tocarAudio(audioPeido); } 
+                    else if (msg.tipo === 'nudge') { tocarAudio(audioAlerta); document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); } 
+                    else if (!isMeu) {
+                        if (msg.tipo === 'texto') tocarAudio(audioEnvio);
+                        else if (msg.tipo === 'dedo') { tocarAudio(audioAlerta); if(msg.idAlvo === meuId) { document.getElementById('msn-window').classList.add('nudge-animation'); setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500); } }
+                    }
+                }
+                ultimaMsgId = idUltimaMsg; 
+            }
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function configurarNotificacoesPM() {
+            onValue(ref(db, 'private_messages'), (snapshot) => {
+                const todasPMs = snapshot.val(); if (!todasPMs) return;
+                Object.keys(todasPMs).forEach(chatId => {
+                    if (chatId.includes(meuId) && chatId !== abaAtiva) {
+                        const msgs = todasPMs[chatId]; const ultima = Object.values(msgs).pop(); 
+                        if (ultima.idAutor !== meuId && ultima.idAlvo === meuId && !abasNaoLidas[chatId]) {
+                            const idOutro = chatId.split('__').find(id => id !== meuId); const nomeOutro = usuariosOnline[idOutro] ? usuariosOnline[idOutro].nome : 'Alguém';
+                            abasNaoLidas[chatId] = true; if (!abasAbertas.find(a => a.id === chatId)) abasAbertas.push({ id: chatId, nome: nomeOutro }); renderizarAbas();
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
