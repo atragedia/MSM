@@ -8,12 +8,9 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, onDisconnect, remove, serverTimestamp, off, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getDatabase, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // =========================================================
-        // SUAS CHAVES DO FIREBASE INSERIDAS AQUI
-        // =========================================================
         const firebaseConfig = {
             apiKey: "AIzaSyBIR5Fq5yem9xjolIhgkLd9M5JVGWb_llI",
             authDomain: "msn-tcc.firebaseapp.com",
@@ -28,11 +25,11 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
         
-        window.db = db; window.ref = ref; window.push = push; window.set = set;
+        window.db = db; window.ref = ref; window.push = push; window.set = set; window.update = update;
         window.onValue = onValue; window.onDisconnect = onDisconnect; window.remove = remove; 
         window.serverTimestamp = serverTimestamp; window.off = off; window.get = get;
         window.auth = auth; window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword; window.sendPasswordResetEmail = sendPasswordResetEmail;
         window.onAuthStateChanged = onAuthStateChanged; window.signOut = signOut;
         
         window.dispatchEvent(new Event('firebaseReady'));
@@ -89,13 +86,30 @@
         .input-row { display: flex; gap: 10px; }
         .chat-input { flex: 1; padding: 10px; border: 1px solid #99bce8; border-radius: 4px; font-family: inherit; font-size: 13px; resize: none; height: 40px; }
         .send-btn { background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); border: 1px solid #99bce8; border-radius: 4px; padding: 0 20px; font-weight: bold; color: #003366; cursor: pointer; }
-        #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; border: 1px solid #99bce8; width: 80%; max-width: 300px;}
-        .login-box h1 { color: #003366; font-size: 22px; margin-top: 0; }
-        .login-box input { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #99bce8; border-radius: 4px; box-sizing: border-box; }
-        .login-box button { width: 100%; padding: 12px; margin-top: 10px; background: linear-gradient(to bottom, #4caf50, #388e3c); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .login-box p { font-size: 11px; color: #666; margin-bottom: 10px; }
-        #login-error { color: #e81123; font-size: 12px; margin-top: 5px; display: none; }
+        
+        .tela-auth { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        .auth-box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; border: 1px solid #99bce8; width: 80%; max-width: 320px;}
+        .auth-box h1 { color: #003366; font-size: 22px; margin-top: 0; }
+        .auth-box input { width: 100%; padding: 10px; margin: 6px 0; border: 1px solid #99bce8; border-radius: 4px; box-sizing: border-box; }
+        .btn-principal { width: 100%; padding: 12px; margin-top: 10px; background: linear-gradient(to bottom, #4caf50, #388e3c); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-secundario { width: 100%; padding: 10px; margin-top: 8px; background: linear-gradient(to bottom, #f0f5fc, #d1e0f5); color: #003366; border: 1px solid #99bce8; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-link { width: 100%; padding: 5px; margin-top: 5px; background: transparent; color: #003366; border: none; text-decoration: underline; cursor: pointer; font-size: 12px;}
+        .auth-box p { font-size: 11px; color: #666; margin-bottom: 10px; }
+        .msg-erro { color: #e81123; font-size: 12px; margin-top: 5px; display: none; }
+        
+        /* TELA DE CARREGAMENTO */
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 239, 255, 0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2500; }
+        .spinner { border: 4px solid #d1e0f5; border-top: 4px solid #003366; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #loading-text { color: #003366; font-weight: bold; font-size: 14px; }
+
+        #modal-dedo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-dedo-box { background: #f0f5fc; padding: 20px; border-radius: 6px; border: 1px solid #99bce8; width: 80%; max-width: 250px; text-align: center; }
+        .modal-dedo-box select { width: 100%; padding: 8px; margin: 10px 0; }
+        .modal-dedo-box button { width: 100%; padding: 10px; margin-top: 5px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-enviar-dedo { background: #e81123; color: white; }
+        .btn-cancelar { background: #ccc; color: #333; }
+        
         #toast-container { position: absolute; bottom: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
         .toast { background: #333; color: white; padding: 10px 15px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; border-left: 5px solid #4caf50; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
@@ -129,9 +143,9 @@
 </head>
 <body>
 
-    <audio id="som-alerta" src="https://www.myinstants.com/media/sounds/nudge.mp3" preload="auto"></audio>
-    <audio id="som-envio" src="https://www.myinstants.com/media/sounds/msn-sound_1.mp3" preload="auto"></audio>
-    <audio id="som-peido" src="https://www.myinstants.com/media/sounds/fart-with-reverb.mp3" preload="auto"></audio>
+    <audio id="som-alerta" src="https://www.myinstants.com/media/sounds/nudge.mp3?v=1" preload="auto"></audio>
+    <audio id="som-envio" src="https://www.myinstants.com/media/sounds/msn-sound_1.mp3?v=2" preload="auto"></audio>
+    <audio id="som-peido" src="https://www.myinstants.com/media/sounds/fart-with-reverb.mp3?v=3" preload="auto"></audio>
 
     <div class="msn-window" id="msn-window">
         <div class="title-bar">
@@ -197,17 +211,38 @@
             </div>
         </div>
 
-        <div id="login-screen">
-            <div class="login-box">
+        <div id="login-screen" class="tela-auth">
+            <div class="auth-box">
                 <img class="logo-magica" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRglp7_PdWWQbu-7XC0_opOeWXgMikWmq3oKc8SM3Rrg&s=10" alt="MSN Logo" style="height: 50px; margin-bottom: 5px;">
                 <h1>MSN Livre</h1>
-                <p>Crie seu apelido e senha.<br><strong>Apenas maiores de 18 anos.</strong></p>
-                <input type="text" id="login-name" placeholder="Seu Apelido (sem espaços)" maxlength="15">
-                <input type="password" id="login-pass" placeholder="Sua Senha (mín. 6 carac.)">
-                <input type="number" id="login-age" placeholder="Sua Idade" min="18">
-                <button onclick="lidarComLogin()">Entrar / Criar Conta</button>
-                <div id="login-error"></div>
+                <p>Entre com seu apelido e senha.</p>
+                <input type="text" id="login-name" placeholder="Seu Apelido" maxlength="15">
+                <input type="password" id="login-pass" placeholder="Sua Senha">
+                <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
+                <button class="btn-secundario" onclick="mostrarTelaCadastro()">Criar Nova Conta</button>
+                <button class="btn-link" onclick="recuperarSenha()">Esqueci a senha</button>
+                <div id="login-error" class="msg-erro"></div>
             </div>
+        </div>
+
+        <div id="cadastro-screen" class="tela-auth hidden">
+            <div class="auth-box">
+                <h1>Criar Conta</h1>
+                <p>Preencha os dados abaixo.<br><strong>Apenas maiores de 18 anos.</strong></p>
+                <input type="text" id="reg-name" placeholder="Seu Apelido (sem espaços)" maxlength="15">
+                <input type="email" id="reg-email" placeholder="Seu E-mail Real (para recuperação)">
+                <input type="password" id="reg-pass" placeholder="Sua Senha (mín. 6 carac.)">
+                <input type="number" id="reg-age" placeholder="Sua Idade" min="18">
+                <button class="btn-principal" onclick="fazerCadastro()">Cadastrar</button>
+                <button class="btn-secundario" onclick="voltarParaLogin()">Voltar para o Login</button>
+                <div id="cadastro-error" class="msg-erro"></div>
+            </div>
+        </div>
+
+        <!-- NOVA TELA DE CARREGAMENTO -->
+        <div id="loading-screen" class="hidden">
+            <div class="spinner"></div>
+            <div id="loading-text">Aguarde...</div>
         </div>
 
         <div id="modal-dedo" class="hidden">
@@ -228,9 +263,10 @@
         let meuStatus = "online";
         let meuRecado = "Disponível";
         
-        let db, ref, push, set, onValue, onDisconnect, remove, serverTimestamp, off, get;
+        let db, ref, push, set, update, onValue, onDisconnect, remove, serverTimestamp, off, get;
         let auth, onAuthStateChanged, signOut;
         let firebaseReady = false;
+        let sessaoIniciada = false; 
         
         let abasAbertas = [{ id: 'global', nome: 'Chat Geral' }];
         let abaAtiva = 'global';
@@ -246,8 +282,27 @@
         const audioEnvio = document.getElementById('som-envio');
         const audioPeido = document.getElementById('som-peido');
 
+        function tocarAudio(audioElement) {
+            if (!audioElement) return;
+            try {
+                audioElement.pause();          
+                audioElement.currentTime = 0;  
+                audioElement.play().catch(e => console.log("Navegador bloqueou o áudio."));
+            } catch (error) {}
+        }
+
+        // CONTROLE DO LOADING
+        function mostrarLoading(texto) {
+            document.getElementById('loading-text').innerText = texto;
+            document.getElementById('loading-screen').classList.remove('hidden');
+        }
+
+        function esconderLoading() {
+            document.getElementById('loading-screen').classList.add('hidden');
+        }
+
         window.addEventListener('firebaseReady', () => {
-            db = window.db; ref = window.ref; push = window.push; set = window.set;
+            db = window.db; ref = window.ref; push = window.push; set = window.set; update = window.update;
             onValue = window.onValue; onDisconnect = window.onDisconnect; remove = window.remove; 
             serverTimestamp = window.serverTimestamp; off = window.off; get = window.get;
             auth = window.auth; onAuthStateChanged = window.onAuthStateChanged; signOut = window.signOut;
@@ -255,35 +310,90 @@
 
             onAuthStateChanged(auth, (user) => {
                 if (user) {
-                    get(ref(db, 'users/' + user.uid)).then((snapshot) => {
-                        if (snapshot.exists()) {
-                            const dados = snapshot.val();
-                            meuId = user.uid;
-                            meuNome = dados.nome;
-                            meuStatus = dados.status || 'online';
-                            meuRecado = dados.recado || 'Disponível';
-                            
-                            document.getElementById('my-status').value = meuStatus;
-                            document.getElementById('my-recado').value = meuRecado;
-                            
-                            iniciarSessao();
-                        }
-                    });
+                    // Se a pessoa já estava logada, mostra a tela de carregamento
+                    if(!sessaoIniciada) mostrarLoading("Carregando perfil...");
+                    
+                    setTimeout(() => {
+                        get(ref(db, 'users/' + user.uid)).then((snapshot) => {
+                            if (snapshot.exists() && !sessaoIniciada) {
+                                const dados = snapshot.val();
+                                meuId = user.uid;
+                                meuNome = dados.nome;
+                                meuStatus = dados.status || 'online';
+                                meuRecado = dados.recado || 'Disponível';
+                                
+                                document.getElementById('my-status').value = meuStatus;
+                                document.getElementById('my-recado').value = meuRecado;
+                                
+                                esconderLoading(); // Esconde a tela de carregamento
+                                iniciarSessao();
+                            } else {
+                                esconderLoading();
+                            }
+                        }).catch(() => esconderLoading());
+                    }, 500); 
                 } else {
+                    esconderLoading();
                     document.getElementById('login-screen').classList.remove('hidden');
                 }
             });
         });
 
-        function lidarComLogin() {
-            const nome = document.getElementById('login-name').value.trim();
-            const senha = document.getElementById('login-pass').value;
-            const idade = document.getElementById('login-age').value.trim();
-            const errorDiv = document.getElementById('login-error');
+        function mostrarTelaCadastro() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('cadastro-screen').classList.remove('hidden');
+            document.getElementById('login-error').style.display = 'none';
+        }
 
+        function voltarParaLogin() {
+            document.getElementById('cadastro-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('cadastro-error').style.display = 'none';
+        }
+
+        function fazerLogin() {
+            const nome = document.getElementById('login-name').value.trim().toLowerCase();
+            const senha = document.getElementById('login-pass').value;
+            const errorDiv = document.getElementById('login-error');
             errorDiv.style.display = 'none';
 
-            if (!nome || !senha || !idade) { 
+            if (!nome || !senha) { 
+                errorDiv.innerText = "Preencha apelido e senha."; errorDiv.style.display = 'block'; return; 
+            }
+
+            mostrarLoading("Entrando..."); // Mostra o loading
+
+            get(ref(db, 'nicknames/' + nome)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const emailReal = snapshot.val().email;
+                    window.signInWithEmailAndPassword(auth, emailReal, senha)
+                        .catch((error) => {
+                            esconderLoading(); // Esconde se der erro
+                            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                                errorDiv.innerText = "Senha incorreta."; errorDiv.style.display = 'block';
+                            } else {
+                                errorDiv.innerText = "Erro: " + error.message; errorDiv.style.display = 'block';
+                            }
+                        });
+                } else {
+                    esconderLoading(); // Esconde se não achar
+                    errorDiv.innerText = "Apelido não encontrado. Crie uma conta."; errorDiv.style.display = 'block';
+                }
+            }).catch((err) => {
+                esconderLoading();
+                errorDiv.innerText = "Erro de conexão. Tente novamente."; errorDiv.style.display = 'block';
+            });
+        }
+
+        function fazerCadastro() {
+            const nome = document.getElementById('reg-name').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const senha = document.getElementById('reg-pass').value;
+            const idade = document.getElementById('reg-age').value.trim();
+            const errorDiv = document.getElementById('cadastro-error');
+            errorDiv.style.display = 'none';
+
+            if (!nome || !email || !senha || !idade) { 
                 errorDiv.innerText = "Preencha todos os campos."; errorDiv.style.display = 'block'; return; 
             }
             if (parseInt(idade) < 18) { 
@@ -293,31 +403,56 @@
                 errorDiv.innerText = "A senha precisa ter no mínimo 6 caracteres."; errorDiv.style.display = 'block'; return; 
             }
 
-            const emailFalso = `${nome.toLowerCase().replace(/\s+/g, '')}@msnlivre.app`;
+            mostrarLoading("Registrando conta..."); // Mostra o loading
 
-            window.signInWithEmailAndPassword(auth, emailFalso, senha)
-                .then((userCredential) => {})
-                .catch((error) => {
-                    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                        window.createUserWithEmailAndPassword(auth, emailFalso, senha)
-                            .then((userCredential) => {
-                                const user = userCredential.user;
-                                set(ref(db, 'users/' + user.uid), {
-                                    nome: nome,
-                                    idade: idade,
-                                    status: 'online',
-                                    recado: 'Disponível'
-                                });
-                            })
-                            .catch((err) => {
-                                errorDiv.innerText = "Erro ao criar conta: " + err.message; errorDiv.style.display = 'block';
+            get(ref(db, 'nicknames/' + nome.toLowerCase())).then((snapshot) => {
+                if (snapshot.exists()) {
+                    esconderLoading();
+                    errorDiv.innerText = "Este apelido já está em uso. Escolha outro."; errorDiv.style.display = 'block';
+                } else {
+                    window.createUserWithEmailAndPassword(auth, email, senha)
+                        .then((userCredential) => {
+                            const user = userCredential.user;
+                            set(ref(db, 'users/' + user.uid), {
+                                nome: nome,
+                                email: email,
+                                idade: idade,
+                                status: 'online',
+                                recado: 'Disponível'
                             });
-                    } else if (error.code === 'auth/wrong-password') {
-                        errorDiv.innerText = "Senha incorreta para este apelido."; errorDiv.style.display = 'block';
-                    } else {
-                        errorDiv.innerText = "Erro: " + error.message; errorDiv.style.display = 'block';
-                    }
-                });
+                            set(ref(db, 'nicknames/' + nome.toLowerCase()), { email: email, uid: user.uid });
+                        })
+                        .catch((err) => {
+                            esconderLoading(); // Esconde se der erro
+                            if(err.code === 'auth/email-already-in-use') {
+                                errorDiv.innerText = "Este e-mail já está cadastrado."; 
+                            } else {
+                                errorDiv.innerText = "Erro ao criar conta: " + err.message; 
+                            }
+                            errorDiv.style.display = 'block';
+                        });
+                }
+            });
+        }
+
+        function recuperarSenha() {
+            const nome = prompt("Digite seu apelido para recuperar a senha:");
+            if (!nome) return;
+
+            get(ref(db, 'nicknames/' + nome.toLowerCase())).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const emailReal = snapshot.val().email;
+                    window.sendPasswordResetEmail(auth, emailReal)
+                        .then(() => {
+                            alert(`Um link de recuperação foi enviado para o e-mail cadastrado. Verifique sua caixa de entrada e o spam.`);
+                        })
+                        .catch((error) => {
+                            alert("Erro ao enviar e-mail: " + error.message);
+                        });
+                } else {
+                    alert("Apelido não encontrado. Verifique se digitou corretamente.");
+                }
+            });
         }
 
         function fazerLogout() {
@@ -330,7 +465,11 @@
         }
 
         function iniciarSessao() {
+            if (sessaoIniciada) return; 
+            sessaoIniciada = true;
+
             document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('cadastro-screen').classList.add('hidden');
             document.getElementById('my-name-display').innerText = meuNome;
 
             salvarPerfilNoBanco();
@@ -360,6 +499,7 @@
             configurarNotificacoesPM();
         }
 
+        // O resto do código continua igual (renderizarListas, abrirAbaPrivada, etc.)
         function renderizarListas() {
             const globalList = document.getElementById('global-list');
             const friendsList = document.getElementById('my-friends-list');
@@ -376,22 +516,22 @@
                         countGlobal++;
                         const isMeu = key === meuId;
                         const isFriend = meusAmigos[key];
+                        const nomeExibicao = isMeu ? `${user.nome} (Você)` : user.nome;
+                        const clickAction = isMeu ? '' : `onclick="abrirAbaPrivada('${key}', '${user.nome}')"`;
 
-                        if (!isMeu) {
-                            const liGlobal = document.createElement('li');
-                            liGlobal.className = 'contact-item';
-                            liGlobal.innerHTML = `
-                                <span class="status-icon ${getStatusClass(user.status)}"></span>
-                                <div style="display:flex; flex-direction:column; flex:1;" onclick="abrirAbaPrivada('${key}', '${user.nome}')">
-                                    <strong>${user.nome}</strong> 
-                                    <span style="font-size:10px; color:#666;">${user.recado || ''}</span>
-                                </div>
-                                ${!isFriend ? `<button class="btn-add-friend" title="Adicionar aos Amigos" onclick="adicionarAmigo('${key}', event)">+</button>` : ''}
-                            `;
-                            globalList.appendChild(liGlobal);
-                        }
+                        const liGlobal = document.createElement('li');
+                        liGlobal.className = 'contact-item';
+                        liGlobal.innerHTML = `
+                            <span class="status-icon ${getStatusClass(user.status)}"></span>
+                            <div style="display:flex; flex-direction:column; flex:1; cursor:${isMeu ? 'default' : 'pointer'};" ${clickAction}>
+                                <strong style="${isMeu ? 'color:#003366;' : ''}">${nomeExibicao}</strong> 
+                                <span style="font-size:10px; color:#666;">${user.recado || ''}</span>
+                            </div>
+                            ${(!isFriend && !isMeu) ? `<button class="btn-add-friend" title="Adicionar aos Amigos" onclick="adicionarAmigo('${key}', event)">+</button>` : ''}
+                        `;
+                        globalList.appendChild(liGlobal);
 
-                        if (isFriend) {
+                        if (isFriend && !isMeu) {
                             const liFriend = document.createElement('li');
                             liFriend.className = 'contact-item';
                             liFriend.innerHTML = `
@@ -442,7 +582,7 @@
 
         function salvarPerfilNoBanco() {
             if (firebaseReady && meuId) {
-                set(ref(db, 'users/' + meuId), { nome: meuNome, status: meuStatus, recado: meuRecado });
+                update(ref(db, 'users/' + meuId), { nome: meuNome, status: meuStatus, recado: meuRecado });
             }
         }
 
@@ -567,18 +707,23 @@
             msgArray.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
             msgArray.forEach(msg => {
-                if (ultimaMsgId !== null && msg.id !== ultimaMsgId && msg.idAutor !== meuId) {
-                    if (idAbaAtual === 'global' || msg.idAlvo === meuId || msg.idAutor === abaAtiva.split('__').find(id => id !== meuId)) {
-                        if (msg.tipo === 'texto') audioEnvio.play().catch(e => console.log(""));
-                        else if (msg.tipo === 'nudge') audioAlerta.play().catch(e => console.log(""));
-                        else if (msg.tipo === 'peido') audioPeido.play().catch(e => console.log(""));
-                        else if (msg.tipo === 'dedo') audioAlerta.play().catch(e => console.log(""));
+                const isMeu = msg.idAutor === meuId; 
+
+                if (ultimaMsgId !== null && msg.id !== ultimaMsgId) {
+                    if (idAbaAtual === 'global' || msg.idAlvo === meuId) {
+                        if (msg.tipo === 'peido') {
+                            tocarAudio(audioPeido); 
+                        } else if (msg.tipo === 'nudge') {
+                            tocarAudio(audioAlerta); 
+                        } else if (!isMeu) {
+                            if (msg.tipo === 'texto') tocarAudio(audioEnvio);
+                            else if (msg.tipo === 'dedo') tocarAudio(audioAlerta);
+                        }
                     }
                 }
 
                 if (msg.tipo === 'texto') {
                     const div = document.createElement('div');
-                    const isMeu = msg.idAutor === meuId;
                     div.className = `msg ${isMeu ? 'sent' : 'received'}`;
                     const dataHora = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : '';
                     div.innerHTML = `${!isMeu ? `<div class="msg-sender">${msg.autor}</div>` : ''}<div>${msg.texto}</div><div class="msg-time">${dataHora}</div>`;
@@ -591,25 +736,24 @@
                     history.appendChild(div);
                 }
                 else if (msg.tipo === 'nudge') {
-                    if (msg.idAutor !== meuId) {
-                        document.getElementById('msn-window').classList.add('nudge-animation');
-                        setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
-                    }
+                    document.getElementById('msn-window').classList.add('nudge-animation');
+                    setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
+
                     const div = document.createElement('div');
                     div.style.cssText = 'text-align:center; font-size:11px; color:#e74c3c; font-weight:bold; margin:5px 0;';
-                    div.innerText = `🔔 ${msg.autor} chamou a atenção!`;
+                    div.innerText = isMeu ? `🔔 Você chamou a atenção!` : `🔔 ${msg.autor} chamou a atenção!`;
                     history.appendChild(div);
                 }
                 else if (msg.tipo === 'peido') {
                     const div = document.createElement('div');
-                    div.style.cssText = 'text-align:center; font-size:12px; color:#2e7d32; font-weight:bold; margin:5px 0;';
+                    div.style.cssText = 'text-align:center; font-size:13px; color:#1b5e20; font-weight:bold; margin:10px 0; background:#e8f5e9; padding:8px; border-radius:5px; border:1px dashed #4caf50;';
                     div.innerText = `💨 ${msg.autor} soltou um peido virtual!`;
                     history.appendChild(div);
                 }
                 else if (msg.tipo === 'dedo') {
                     const div = document.createElement('div');
                     if (msg.idAlvo === meuId) {
-                        if (msg.idAutor !== meuId && ultimaMsgId !== msg.id) {
+                        if (!isMeu && ultimaMsgId !== msg.id) {
                             document.getElementById('msn-window').classList.add('nudge-animation');
                             setTimeout(() => document.getElementById('msn-window').classList.remove('nudge-animation'), 500);
                         }
@@ -622,7 +766,7 @@
                     history.appendChild(div);
                 }
 
-                if (ultimaMsgId !== msg.id && msg.idAutor !== meuId) {
+                if (!isMeu && ultimaMsgId !== msg.id) {
                     if (msg.idAlvo === meuId && idAbaAtual !== abaAtiva) {
                         const chatId = [meuId, msg.idAutor].sort().join('__'); 
                         abasNaoLidas[chatId] = true;
